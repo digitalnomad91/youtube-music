@@ -89,7 +89,7 @@ function logToFrontend(
   // Also log to frontend for production debugging
   try {
     win?.webContents?.executeJavaScript(
-      `console.${level}('[Downloader] ${formattedMessage.replace(/'/g, "\\'")}');`
+      `console.${level}('[Downloader] ${formattedMessage.replace(/\\/g, '\\\\').replace(/'/g, '\\\'').replace(/\n/g, '\\n')}');`,
     );
   } catch {
     // Ignore errors if window not available
@@ -198,17 +198,27 @@ const sendError = (error: Error, source?: string) => {
     commandInfo = `\n\nCommand attempted: ${match[1]}`;
   }
 
-  // Show user-friendly error dialog
-  dialog.showMessageBox(win, {
-    type: 'error',
-    buttons: [t('plugins.downloader.backend.dialog.error.buttons.ok')],
-    title: t('plugins.downloader.backend.dialog.error.title'),
-    message: t('plugins.downloader.backend.dialog.error.message'),
-    detail:
-      message +
-      commandInfo +
-      '\n\nIf this is a yt-dlp error, please check the path in the Downloader plugin settings.',
-  });
+  // Detect common yt-dlp errors and suggest workarounds
+  let userTip = '';
+  if (/403 Forbidden|unable to download video data|age.restrict/i.test(message)) {
+    userTip = '\n\nTip: This video may be age-restricted or region-blocked. Try logging in with cookies, or enable geo-bypass in yt-dlp settings.';
+  }
+
+  // Log error to frontend console for copy/paste
+  logToFrontend('error', '❌ Download failed:', message + commandInfo + userTip);
+
+  // Send error to renderer for toast display (non-blocking)
+  try {
+    win.webContents.send('downloader-error-toast', {
+      message: message + commandInfo + userTip,
+      title: t('plugins.downloader.backend.dialog.error.title'),
+    });
+  } catch (e) {
+    logToFrontend('warn', '⚠️ Could not send error toast:', e);
+  }
+
+  // Optionally, show a non-blocking notification (OS toast)
+  sendOsNotification(t('plugins.downloader.backend.dialog.error.title'), message + userTip).catch(() => {});
 };
 
 export const onMainLoad = async ({

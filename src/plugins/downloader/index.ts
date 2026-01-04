@@ -24,6 +24,7 @@ export type DownloaderPluginConfig = {
   playlistMaxItems?: number;
   advanced?: {
     ytDlpPath?: string;
+    cookie?: string;
   };
 };
 
