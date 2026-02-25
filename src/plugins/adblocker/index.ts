@@ -120,16 +120,18 @@ export default createPlugin({
     // see #1478
     script: `const _prunerFn = window._pruner;
     window._pruner = undefined;
-    JSON.parse = new Proxy(JSON.parse, {
-      apply() {
-        return _prunerFn(Reflect.apply(...arguments));
-      },
-    });
-    Response.prototype.json = new Proxy(Response.prototype.json, {
-      apply() {
-        return Reflect.apply(...arguments).then((o) => _prunerFn(o));
-      },
-    }); 0`,
+    if (typeof _prunerFn === 'function') {
+      JSON.parse = new Proxy(JSON.parse, {
+        apply() {
+          return _prunerFn(Reflect.apply(...arguments));
+        },
+      });
+      Response.prototype.json = new Proxy(Response.prototype.json, {
+        apply() {
+          return Reflect.apply(...arguments).then((o) => _prunerFn(o));
+        },
+      });
+    } 0`,
     async start({ getConfig }) {
       const config = await getConfig();
 

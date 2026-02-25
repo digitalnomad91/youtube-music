@@ -20,6 +20,9 @@ export const inject = (contextBridge) => {
   injected = true;
   {
     const pruner = function (o) {
+      if (typeof o !== 'object' || o === null) {
+        return o;
+      }
       delete o.playerAds;
       delete o.adPlacements;
       delete o.adSlots;

@@ -754,40 +754,47 @@ export const injectRm3 = () => {
     };
 
     document.createElement9512 = document.createElement;
+    let _ceDepth = 0;
     document.createElement = function (a) {
-      const r = document.createElement9512(a);
+      _ceDepth++;
       try {
-        const cnt = insp(r);
-        if (cnt.createComponent_ && !cnt.createComponent9512_) {
-          const cProto = getProto(r);
-          if (cProto.createComponent_ === cnt.createComponent_) {
-            if (
-              !cProto.createComponent9512_ &&
-              typeof cProto.createComponent_ === 'function' &&
-              cProto.createComponent_.length === 3
-            ) {
-              cProto.createComponent9512_ = cProto.createComponent_;
+        const r = document.createElement9512(a);
+        if (_ceDepth > 1) return r;
+        try {
+          const cnt = insp(r);
+          if (cnt.createComponent_ && !cnt.createComponent9512_) {
+            const cProto = getProto(r);
+            if (cProto.createComponent_ === cnt.createComponent_) {
+              if (
+                !cProto.createComponent9512_ &&
+                typeof cProto.createComponent_ === 'function' &&
+                cProto.createComponent_.length === 3
+              ) {
+                cProto.createComponent9512_ = cProto.createComponent_;
 
-              cProto.createComponent_ = createComponentDefine_;
-              DEBUG_OPT && hookTos.add(a);
-            }
-          } else {
-            if (
-              typeof cnt.createComponent_ === 'function' &&
-              cnt.createComponent_.length === 3
-            ) {
-              cnt.createComponent9512_ = cnt.createComponent_;
+                cProto.createComponent_ = createComponentDefine_;
+                DEBUG_OPT && hookTos.add(a);
+              }
+            } else {
+              if (
+                typeof cnt.createComponent_ === 'function' &&
+                cnt.createComponent_.length === 3
+              ) {
+                cnt.createComponent9512_ = cnt.createComponent_;
 
-              cnt.createComponent_ = createComponentDefine_;
-              DEBUG_OPT && hookTos.add(a);
+                cnt.createComponent_ = createComponentDefine_;
+                DEBUG_OPT && hookTos.add(a);
+              }
             }
           }
+        } catch (e) {
+          console.warn(e);
         }
-      } catch (e) {
-        console.warn(e);
-      }
 
-      return r;
+        return r;
+      } finally {
+        _ceDepth--;
+      }
     };
 
     rm3.checkWhetherUnderParent = () => {
